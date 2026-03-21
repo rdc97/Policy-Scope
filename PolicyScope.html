@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PolicyScope — AI-powered policy comparison</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F7F5F0;
+    --surface: #FFFFFF;
+    --ink: #1A1A18;
+    --ink-muted: #6B6B66;
+    --ink-faint: #A8A89F;
+    --accent: #1D4ED8;
+    --accent-light: #EFF6FF;
+    --border: rgba(26,26,24,0.1);
+    --border-strong: rgba(26,26,24,0.2);
+    --green: #166534;
+    --green-bg: #F0FDF4;
+    --amber: #92400E;
+    --amber-bg: #FFFBEB;
+    --red: #991B1B;
+    --red-bg: #FEF2F2;
+    --blue: #1e3a8a;
+    --blue-bg: #eff6ff;
+    --radius: 3px;
+    --radius-lg: 6px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .masthead {
+    background: var(--ink);
+    color: white;
+    padding: 20px 32px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    border-bottom: 3px solid var(--accent);
+  }
+
+  .masthead h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    color: white;
+  }
+
+  .masthead .tagline {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 300;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  .config-panel {
+    background: var(--surface);
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+
+  .config-panel-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--ink-muted);
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+
+  .api-key-row { display: flex; gap: 10px; align-items: center; }
+
+  .api-key-row input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius);
+    font-family: monospace;
+    font-size: 12px;
+    background: var(--bg);
+    color: var(--ink);
+    outline: none;
+  }
+
+  .api-key-row input:focus { border-color: var(--accent); }
+  .key-hint { font-size: 11px; color: var(--ink-faint); margin-top: 6px; }
+
+  .config-bar {
+    background: var(--surface);
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 16px;
+    align-items: end;
+  }
+
+  @media (max-width: 600px) {
+    .config-bar { grid-template-columns: 1fr; }
+  }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--ink-muted);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  .field input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .field input:focus { border-color: var(--accent); background: white; }
+
+  .add-btn {
+    padding: 9px 20px;
+    background: var(--ink);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+    height: 38px;
+  }
+
+  .add-btn:hover { background: #333; }
+  .add-btn:disabled { background: var(--ink-faint); cursor: not-allowed; }
+
+  .locations-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    min-height: 10px;
+  }
+
+  .loc-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px 5px 12px;
+    background: var(--surface);
+    border: 0.5px solid var(--border-strong);
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .loc-chip button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-faint);
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 2px;
+  }
+
+  .loc-chip button:hover { color: var(--ink); }
+
+  .compare-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 32px;
+    background: #1D4ED8;
+    color: #000000;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'DM Serif Display', serif;
+    font-size: 17px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    margin-bottom: 32px;
+  }
+
+  .compare-btn:hover { background: #1a44c2; }
+  .compare-btn:active { transform: scale(0.99); }
+  .compare-btn:disabled { background: #9CA3AF; cursor: not-allowed; color: #000000; }
+
+  .section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ink-faint);
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+
+  .grid { display: grid; gap: 16px; }
+
+  .policy-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 0.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .card-header h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--ink);
+  }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .score-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .score-high { background: var(--green-bg); color: var(--green); }
+  .score-mid  { background: var(--amber-bg); color: var(--amber); }
+  .score-low  { background: var(--red-bg); color: var(--red); }
+
+  .score-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .score-high .score-dot { background: var(--green); }
+  .score-mid  .score-dot { background: var(--amber); }
+  .score-low  .score-dot { background: var(--red); }
+
+  .timestamp {
+    font-size: 11px;
+    color: var(--ink-faint);
+  }
+
+  .card-body { padding: 16px 20px; }
+
+  .summary-text {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-bottom: 16px;
+    line-height: 1.7;
+  }
+
+  .provisions-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--ink-faint);
+    font-weight: 500;
+    margin-bottom: 10px;
+  }
+
+  .provisions-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+
+  .provision {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  .prov-status {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    margin-top: 1px;
+  }
+
+  .prov-yes { background: var(--green-bg); color: var(--green); }
+  .prov-no  { background: var(--red-bg); color: var(--red); }
+  .prov-partial { background: var(--amber-bg); color: var(--amber); }
+
+  .divider { height: 0.5px; background: var(--border); margin: 16px 0; }
+
+  .sources-section {
+    background: var(--bg);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-top: 16px;
+  }
+
+  .sources-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--ink-faint);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .source-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .source-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .source-item:first-child { padding-top: 0; }
+
+  .source-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .source-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .source-type {
+    font-size: 10px;
+    padding: 1px 7px;
+    border-radius: 100px;
+    font-weight: 500;
+  }
+
+  .source-type-official { background: var(--green-bg); color: var(--green); }
+  .source-type-un       { background: var(--blue-bg); color: var(--blue); }
+  .source-type-other    { background: var(--amber-bg); color: var(--amber); }
+
+  .source-year { font-size: 11px; color: var(--ink-faint); }
+
+  .source-link {
+    font-size: 11px;
+    color: var(--accent);
+    text-decoration: none;
+    word-break: break-all;
+  }
+
+  .source-link:hover { text-decoration: underline; }
+
+  .source-caveat {
+    font-size: 11px;
+    color: var(--amber);
+    font-style: italic;
+  }
+
+  .loading-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--ink-muted);
+    font-size: 13px;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-strong);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-card {
+    background: var(--red-bg);
+    border: 0.5px solid rgba(153,27,27,0.2);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    color: var(--red);
+    font-size: 13px;
+  }
+
+  .empty-state {
+    background: var(--surface);
+    border: 0.5px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 48px 24px;
+    text-align: center;
+  }
+
+  .empty-state p { font-size: 13px; line-height: 1.7; color: var(--ink-muted); }
+
+  .topic-examples {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 14px;
+  }
+
+  .topic-pill {
+    padding: 4px 10px;
+    background: var(--bg);
+    border: 0.5px solid var(--border-strong);
+    border-radius: 100px;
+    font-size: 11px;
+    color: var(--ink-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .topic-pill:hover {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <h1>PolicyScope</h1>
+  <span class="tagline">AI-powered policy comparison</span>
+</div>
+
+<div class="main">
+
+  <div class="config-panel" id="apiPanel">
+    <div class="config-panel-title">Anthropic API key</div>
+    <div class="api-key-row">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-..." spellcheck="false" />
+      <button class="add-btn" onclick="saveKey()">Save key</button>
+    </div>
+    <p class="key-hint">Your key is stored in memory only and never sent anywhere other than Anthropic's API.</p>
+  </div>
+
+  <div class="config-bar">
+    <div class="field">
+      <label>Policy theme</label>
+      <input type="text" id="topicInput" placeholder="e.g. web privacy laws, housing policy, abortion access..." />
+    </div>
+    <div class="field">
+      <label>Location to add</label>
+      <input type="text" id="locationInput" placeholder="e.g. Germany, California, EU..." onkeydown="if(event.key==='Enter') addLocation()" />
+    </div>
+    <button class="add-btn" onclick="addLocation()">+ Add</button>
+  </div>
+
+  <div class="locations-row" id="locationsRow"></div>
+
+  <button class="compare-btn" onclick="runComparison()" id="compareBtn" disabled>
+    Compare policies →
+  </button>
+
+  <div class="section-label" id="resultsLabel" style="display:none">Comparison results</div>
+  <div class="grid" id="resultsGrid">
+    <div class="empty-state">
+      <div style="font-size:28px;margin-bottom:12px;">⚖</div>
+      <p>Add a topic and at least two locations, then click <strong>Compare policies</strong>.<br>The AI will analyze each jurisdiction and score key provisions.</p>
+      <div class="topic-examples">
+        <span class="topic-pill" onclick="setExample('web privacy laws', ['European Union','United States','Brazil','India'])">Web privacy laws</span>
+        <span class="topic-pill" onclick="setExample('housing affordability policy', ['Netherlands','Germany','California','Singapore'])">Housing policy</span>
+        <span class="topic-pill" onclick="setExample('abortion access laws', ['France','Poland','Texas','New Zealand'])">Abortion access</span>
+        <span class="topic-pill" onclick="setExample('freedom of press protections', ['Norway','Hungary','Philippines','United Kingdom'])">Press freedom</span>
+        <span class="topic-pill" onclick="setExample('LGBTQ+ legal protections', ['Canada','Uganda','Germany','United States'])">LGBTQ+ rights</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let locations = [];
+let apiKey = '';
+
+function saveKey() {
+  apiKey = document.getElementById('apiKeyInput').value.trim();
+  if (apiKey) {
+    const panel = document.getElementById('apiPanel');
+    panel.style.borderColor = 'rgba(22,101,52,0.3)';
+    panel.style.background = '#f0fdf4';
+  }
+}
+
+function addLocation() {
+  const input = document.getElementById('locationInput');
+  const val = input.value.trim();
+  if (!val || locations.includes(val)) { input.value = ''; return; }
+  locations.push(val);
+  input.value = '';
+  renderChips();
+  updateBtn();
+}
+
+function removeLocation(loc) {
+  locations = locations.filter(l => l !== loc);
+  renderChips();
+  updateBtn();
+}
+
+function renderChips() {
+  const row = document.getElementById('locationsRow');
+  row.innerHTML = locations.map(l => `
+    <div class="loc-chip">
+      ${l}
+      <button onclick="removeLocation('${l.replace(/'/g,"\\'")}')">×</button>
+    </div>
+  `).join('');
+}
+
+function updateBtn() {
+  const topic = document.getElementById('topicInput').value.trim();
+  document.getElementById('compareBtn').disabled = !(topic && locations.length >= 2);
+}
+
+document.getElementById('topicInput').addEventListener('input', updateBtn);
+
+function setExample(topic, locs) {
+  document.getElementById('topicInput').value = topic;
+  locations = [...locs];
+  renderChips();
+  updateBtn();
+}
+
+function scoreClass(s) { return s >= 7 ? 'score-high' : s >= 4 ? 'score-mid' : 'score-low'; }
+function scoreLabel(s) { return s >= 7 ? 'Strong' : s >= 4 ? 'Moderate' : 'Weak'; }
+
+function provStatus(status) {
+  if (status === 'yes') return { cls: 'prov-yes', symbol: '✓' };
+  if (status === 'no')  return { cls: 'prov-no',  symbol: '✕' };
+  return { cls: 'prov-partial', symbol: '~' };
+}
+
+function sourceTypeClass(type) {
+  if (type === 'official') return 'source-type-official';
+  if (type === 'un')       return 'source-type-un';
+  return 'source-type-other';
+}
+
+function sourceTypeLabel(type) {
+  if (type === 'official') return 'Official government';
+  if (type === 'un')       return 'UN / Intergovernmental';
+  return 'Other source';
+}
+
+function formatTimestamp() {
+  return new Date().toLocaleString('en-GB', {
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+  });
+}
+
+async function analyzeLocation(topic, location) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1500,
+      system: 'You are a precise policy analyst and legal researcher. Respond ONLY with valid JSON — no markdown, no prose before or after.',
+      messages: [{
+        role: 'user',
+        content: `Analyze "${topic}" in ${location}.
+
+Return ONLY this JSON:
+{
+  "summary": "2-3 sentence factual summary of current policy/law",
+  "score": <integer 1-10 where 10 = strongest protections or most progressive>,
+  "scoreReason": "one sentence explaining the score",
+  "provisions": [
+    { "name": "provision name", "status": "yes|no|partial", "note": "brief note" },
+    { "name": "provision name", "status": "yes|no|partial", "note": "brief note" },
+    { "name": "provision name", "status": "yes|no|partial", "note": "brief note" },
+    { "name": "provision name", "status": "yes|no|partial", "note": "brief note" },
+    { "name": "provision name", "status": "yes|no|partial", "note": "brief note" }
+  ],
+  "sources": [
+    {
+      "name": "Full official name of the law, treaty, directive, or document",
+      "type": "official|un|other",
+      "url": "URL to official government or UN page — use homepage of the official body if exact page unknown",
+      "year": "year enacted or last amended",
+      "caveat": "empty string if official verified source; otherwise brief explanation e.g. No official English version available"
+    }
+  ]
+}
+
+Source rules:
+- Prioritise official government legislation portals (e.g. legislation.gov.uk, legifrance.gouv.fr, federalregister.gov, EUR-Lex, UN treaty databases, ohchr.org).
+- Include 2–4 sources. type = "official" for national government, "un" for UN/intergovernmental, "other" for NGO/academic/news.
+- If no verified official URL is known, use the homepage of the relevant official body and set caveat.
+- Do NOT invent URLs.`
+      }]
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API error ${res.status}`);
+  }
+
+  const data = await res.json();
+  const text = data.content[0].text.trim().replace(/```json|```/g, '').trim();
+  return JSON.parse(text);
+}
+
+function renderSources(sources) {
+  if (!sources || sources.length === 0) return '';
+  return `
+    <div class="sources-section">
+      <div class="sources-title">Sources</div>
+      ${sources.map(s => `
+        <div class="source-item">
+          <div class="source-row">
+            <span class="source-name">${s.name}</span>
+            <span class="source-type ${sourceTypeClass(s.type)}">${sourceTypeLabel(s.type)}</span>
+            ${s.year ? `<span class="source-year">${s.year}</span>` : ''}
+          </div>
+          ${s.url ? `<a class="source-link" href="${s.url}" target="_blank" rel="noopener noreferrer">${s.url}</a>` : ''}
+          ${s.caveat ? `<span class="source-caveat">Note: ${s.caveat}</span>` : ''}
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+function renderCard(location, data, timestamp) {
+  const sc = scoreClass(data.score);
+  const sl = scoreLabel(data.score);
+  return `
+    <div class="policy-card">
+      <div class="card-header">
+        <h2>${location}</h2>
+        <div class="card-meta">
+          <div class="score-badge ${sc}">
+            <span class="score-dot"></span>
+            ${sl} &nbsp;·&nbsp; ${data.score}/10
+          </div>
+          <span class="timestamp">Retrieved ${timestamp}</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="summary-text">${data.summary}</p>
+        <div class="divider"></div>
+        <div class="provisions-title">Key provisions</div>
+        <ul class="provisions-list">
+          ${data.provisions.map(p => {
+            const s = provStatus(p.status);
+            return `<li class="provision">
+              <span class="prov-status ${s.cls}">${s.symbol}</span>
+              <span><strong>${p.name}</strong> — ${p.note}</span>
+            </li>`;
+          }).join('')}
+        </ul>
+        ${renderSources(data.sources)}
+      </div>
+    </div>`;
+}
+
+async function runComparison() {
+  const topic = document.getElementById('topicInput').value.trim();
+  if (!topic || locations.length < 2) return;
+  if (!apiKey) { alert('Please enter and save your Anthropic API key first.'); return; }
+
+  const btn = document.getElementById('compareBtn');
+  btn.disabled = true;
+  btn.textContent = 'Analyzing…';
+
+  document.getElementById('resultsLabel').style.display = 'block';
+  const grid = document.getElementById('resultsGrid');
+  grid.style.gridTemplateColumns = locations.length <= 2 ? '1fr' : 'repeat(2, 1fr)';
+
+  grid.innerHTML = locations.map(loc =>
+    `<div class="loading-card" id="loading-${loc.replace(/[\s.]/g,'_')}">
+      <div class="spinner"></div>
+      Analyzing ${loc}…
+    </div>`
+  ).join('');
+
+  await Promise.all(locations.map(async (loc) => {
+    const key = loc.replace(/[\s.]/g, '_');
+    const timestamp = formatTimestamp();
+    try {
+      const data = await analyzeLocation(topic, loc);
+      const el = document.getElementById(`loading-${key}`);
+      if (el) el.outerHTML = renderCard(loc, data, timestamp);
+    } catch (e) {
+      const el = document.getElementById(`loading-${key}`);
+      if (el) el.outerHTML = `<div class="error-card">Could not load <strong>${loc}</strong>: ${e.message}</div>`;
+    }
+  }));
+
+  btn.disabled = false;
+  btn.textContent = 'Compare again →';
+}
+</script>
+</body>
+</html>
